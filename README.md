@@ -32,7 +32,7 @@ See http://drupal.org/documentation/install/modules-themes/modules-7 for further
 
 ### Display output
 #### Social networks
-* Выбор социальных сетей с возможностью сортровки по весу или drag&drop
+* Выбор социальных сетей с возможностью сортировки по весу или drag&drop
 
 #### Options
 * **URL** - When buttons used on different page. _(Поддерживаются Токены)_
