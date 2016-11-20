@@ -1,0 +1,141 @@
+<?php
+/**
+ * @file
+ * Main file for the Social Likes Next module.
+ */
+
+/**
+ * Returns all social networks with supported features.
+ */
+function social_likes_social_networks_list() {
+  return array(
+    'facebook'      => 'Facebook',
+    'twitter'       => 'Twitter',
+    'plusone'       => 'Google+',
+    'pinterest'     => 'Pinterest',
+    'telegram'      => 'Telegram',
+    'linkedin'      => 'LinkedIn',
+    'vkontakte'     => 'Вконтакте',
+    'odnoklassniki' => 'Одноклассники',
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function social_likes_menu() {
+  $items = array();
+
+  $items['admin/config/services/social_likes'] = array(
+    'title' => 'Social Likes Next',
+    'description' => 'Configure Social Likes Next widget.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('social_likes_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'social_likes.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function social_likes_field_extra_fields() {
+  $social_likes_fields = array();
+
+  foreach (node_type_get_types() as $type) {
+    $social_likes_fields['node'][$type->type]['display']['social_likes'] = array(
+      'label' => t('Social Likes Next'),
+      'description' => t('Social Likes Next'),
+      'weight' => 50,
+    );
+  }
+  
+  return $social_likes_fields;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function social_likes_node_view($node, $view_mode, $langcode) {
+  static $social_likes_fields = array();
+
+  $social_likes_widget = array(
+    '#theme' => 'social_likes_widget',
+    '#node' => $node,
+  );
+
+  $key = 'node:' . $node->type . ':' . $view_mode;
+  if (!isset($social_likes_fields[$key])) {
+    $social_likes_fields[$key] = field_extra_fields_get_display('node', $node->type, $view_mode);
+  }
+
+  if (isset($social_likes_fields[$key]['social_likes']) && $social_likes_fields[$key]['social_likes']['visible']) {
+    $node->content['social_likes']['#markup'] = drupal_render($social_likes_widget);
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function social_likes_theme() {
+  return array(
+    'social_likes_widget' => array(
+      'variables' => array(
+        'node' => NULL,
+      ),
+    ),
+  );
+}
+
+function theme_social_likes_widget($vars) {
+  $node = $vars['node'];
+
+  $social_networks = social_likes_social_networks_list();
+
+  $skin = variable_get('social_likes_skin');
+  $custom = variable_get('social_likes_custom');
+  $look = variable_get('social_likes_look') ? 'social-likes_vertical' : '';
+  $labels = variable_get('social_likes_labels');
+  $websites = variable_get('social_likes_websites');
+  $websites = array_diff($websites, array(0));
+  $url = variable_get('social_likes_url');
+  $url = token_replace($url, array('node' => $node));
+  $url = $url ? 'data-url="' . $url . '"' : '';
+  $title = variable_get('social_likes_title');
+  $title = token_replace($title, array('node' => $node));
+  $title = $title ? 'data-title="' . $title . '"' : '';
+
+  drupal_add_js(drupal_get_path('module', 'social_likes') . '/dist/social-likes.min.js', array('type' => 'file', 'scope' => 'footer'));
+  if ($skin == 'custom') {
+    drupal_add_css($custom);
+  }
+  else {
+    drupal_add_css(drupal_get_path('module', 'social_likes') . '/dist/social-likes_' . $skin . '.css');
+  }
+
+  $social_likes = '<div class="social-likes ' . $look . '"' . $url .  $title . '>';
+  foreach ($websites as $website) {
+    $label = $labels == FALSE ? $social_networks[$website] : '';
+    $title_name = t('Share link on @name', array('@name' => $social_networks[$website]));
+    if ($website == 'twitter') {
+      $twitter_via = variable_get('social_likes_via') ? 'data-via="' . variable_get('social_likes_via') . '"' : '';
+      $twitter_related = variable_get('social_likes_related') ? 'data-related="' . variable_get('social_likes_related') . '"' : '';
+
+    }
+    elseif ($website == 'pinterest') {
+      $image_url = variable_get('social_likes_image_url') ? 'data-media="' . variable_get('social_likes_image_url') . '"' : '';
+    }
+    else {
+      $twitter_via = '';
+      $twitter_related = '';
+      $image_url = '';
+    }
+
+    $social_likes .= '<div data-service="' . $website . '" title="' . $title_name . '"' . $image_url . $twitter_via . $twitter_related . '>' . $label . '</div>';
+  }
+  $social_likes .= '</div>';
+
+  return $social_likes;
+}

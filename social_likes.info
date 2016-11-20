@@ -1,0 +1,5 @@
+name = Social Likes Next
+description = Beautiful share buttons for social networks: Facebook, Twitter, Google+, Pinterest, Telegram, LinkedIn, Vkontakte and Odnoklassniki.
+core = 7.x
+package = Social Likes
+configure = admin/config/services/social_likes

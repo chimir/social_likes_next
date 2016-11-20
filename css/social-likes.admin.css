@@ -1,0 +1,15 @@
+.form-item.form-item-social-likes-via,
+.form-item.form-item-social-likes-related {
+  width: 50%;
+  float: left;
+  box-sizing: border-box;
+}
+
+.form-item.form-item-social-likes-via {
+  padding-right: 5px;
+}
+
+.form-item.form-item-social-likes-related {
+  padding-left: 5px;
+}
+
