@@ -9,14 +9,14 @@
  */
 function social_likes_social_networks_list() {
   return array(
-    'facebook'      => 'Facebook',
-    'twitter'       => 'Twitter',
-    'plusone'       => 'Google+',
-    'pinterest'     => 'Pinterest',
-    'telegram'      => 'Telegram',
-    'linkedin'      => 'LinkedIn',
-    'vkontakte'     => 'Вконтакте',
-    'odnoklassniki' => 'Одноклассники',
+    'facebook'      => t('Facebook'),
+    'twitter'       => t('Twitter'),
+    'plusone'       => t('Google+'),
+    'pinterest'     => t('Pinterest'),
+    'telegram'      => t('Telegram'),
+    'linkedin'      => t('LinkedIn'),
+    'vkontakte'     => t('Vkontakte'),
+    'odnoklassniki' => t('Odnoklassniki'),
   );
 }
 
