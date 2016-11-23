@@ -51,7 +51,7 @@ function social_likes_field_extra_fields() {
       'weight' => 50,
     );
   }
-  
+
   return $social_likes_fields;
 }
 
@@ -61,19 +61,80 @@ function social_likes_field_extra_fields() {
 function social_likes_node_view($node, $view_mode, $langcode) {
   static $social_likes_fields = array();
 
-  $social_likes_widget = array(
-    '#theme' => 'social_likes_widget',
-    '#node' => $node,
-  );
-
   $key = 'node:' . $node->type . ':' . $view_mode;
   if (!isset($social_likes_fields[$key])) {
     $social_likes_fields[$key] = field_extra_fields_get_display('node', $node->type, $view_mode);
   }
 
+  $element = social_likes_element_info()['social_likes_widget'];
+
   if (isset($social_likes_fields[$key]['social_likes']) && $social_likes_fields[$key]['social_likes']['visible']) {
-    $node->content['social_likes']['#markup'] = drupal_render($social_likes_widget);
+    $node->content['social_likes']['#type'] = 'social_likes_widget';
+
+    if (isset($element['#url'])) {
+      $node->content['social_likes']['#url'] = token_replace($element['#url'], array('node' => $node));
+    }
+
+    if (isset($element['#title'])) {
+      $node->content['social_likes']['#title'] = token_replace($element['#title'], array('node' => $node));
+    }
   }
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function social_likes_element_info() {
+  $types = array();
+
+  $types['social_likes_widget'] = array(
+    '#input' => FALSE,
+    '#pre_render' => array('social_likes_widget_pre_render'),
+    // Appearance.
+    '#skin' => variable_get('social_likes_skin', 'flat'),
+    '#custom' => variable_get('social_likes_custom', 'sites/all/modules/social_likes/css/social-likes_example.css'),
+    '#look' => variable_get('social_likes_look', FALSE),
+    '#labels' => variable_get('social_likes_labels', FALSE),
+    // Display output.
+    '#websites' => variable_get('social_likes_websites', drupal_map_assoc(array('facebook', 'twitter', 'vkontakte'))),
+    '#url' => variable_get('social_likes_url', '[node:url]'),
+    '#title' => variable_get('social_likes_title', '[node:title]'),
+    '#via' => variable_get('social_likes_via', ''),
+    '#related' => variable_get('social_likes_related', ''),
+    '#image_url' => variable_get('social_likes_image_url', ''),
+
+  );
+
+  return $types;
+}
+
+function social_likes_widget_pre_render($element) {
+  $element['#theme'] = 'social_likes_widget';
+
+  $element['#label'] = social_likes_social_networks_list();
+  $element['#look'] = $element['#look'] ? 'social-likes_vertical' : '';
+  $element['#websites'] = array_diff($element['#websites'], array(0));
+  $element['#url'] = $element['#url'] ? $element['#url'] : '';
+  $element['#title'] = $element['#title'] ? $element['#title'] : '';
+  $element['#via'] = $element['#via'] ? $element['#via'] : '';
+  $element['#related'] = $element['#related'] ? $element['#related'] : '';
+  $element['#image_url'] = $element['#image_url'] ? $element['#image_url'] : '';
+
+  $skin = $element['#skin'];
+  $custom = $element['#custom'];
+  if ($skin == 'custom') {
+    $skin_css = $custom;
+  }
+  else {
+    $skin_css = drupal_get_path('module', 'social_likes') . '/dist/social-likes_' . $skin . '.css';
+  }
+
+  $element['#attached'] = array(
+      'js' => array(drupal_get_path('module', 'social_likes') . '/dist/social-likes.min.js' => array('type' => 'file', 'scope' => 'footer')),
+      'css' => array($skin_css)
+  );
+
+  return $element;
 }
 
 /**
@@ -82,60 +143,8 @@ function social_likes_node_view($node, $view_mode, $langcode) {
 function social_likes_theme() {
   return array(
     'social_likes_widget' => array(
-      'variables' => array(
-        'node' => NULL,
-      ),
+      'render element' => 'element',
+      'template' => 'templates/social_likes_widget',
     ),
   );
-}
-
-function theme_social_likes_widget($vars) {
-  $node = $vars['node'];
-
-  $social_networks = social_likes_social_networks_list();
-
-  $skin = variable_get('social_likes_skin');
-  $custom = variable_get('social_likes_custom');
-  $look = variable_get('social_likes_look') ? 'social-likes_vertical' : '';
-  $labels = variable_get('social_likes_labels');
-  $websites = variable_get('social_likes_websites');
-  $websites = array_diff($websites, array(0));
-  $url = variable_get('social_likes_url');
-  $url = token_replace($url, array('node' => $node));
-  $url = $url ? 'data-url="' . $url . '"' : '';
-  $title = variable_get('social_likes_title');
-  $title = token_replace($title, array('node' => $node));
-  $title = $title ? 'data-title="' . $title . '"' : '';
-
-  drupal_add_js(drupal_get_path('module', 'social_likes') . '/dist/social-likes.min.js', array('type' => 'file', 'scope' => 'footer'));
-  if ($skin == 'custom') {
-    drupal_add_css($custom);
-  }
-  else {
-    drupal_add_css(drupal_get_path('module', 'social_likes') . '/dist/social-likes_' . $skin . '.css');
-  }
-
-  $social_likes = '<div class="social-likes ' . $look . '"' . $url .  $title . '>';
-  foreach ($websites as $website) {
-    $label = $labels == FALSE ? $social_networks[$website] : '';
-    $title_name = t('Share link on @name', array('@name' => $social_networks[$website]));
-    if ($website == 'twitter') {
-      $twitter_via = variable_get('social_likes_via') ? 'data-via="' . variable_get('social_likes_via') . '"' : '';
-      $twitter_related = variable_get('social_likes_related') ? 'data-related="' . variable_get('social_likes_related') . '"' : '';
-
-    }
-    elseif ($website == 'pinterest') {
-      $image_url = variable_get('social_likes_image_url') ? 'data-media="' . variable_get('social_likes_image_url') . '"' : '';
-    }
-    else {
-      $twitter_via = '';
-      $twitter_related = '';
-      $image_url = '';
-    }
-
-    $social_likes .= '<div data-service="' . $website . '" title="' . $title_name . '"' . $image_url . $twitter_via . $twitter_related . '>' . $label . '</div>';
-  }
-  $social_likes .= '</div>';
-
-  return $social_likes;
 }
