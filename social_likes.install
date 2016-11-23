@@ -1,6 +1,22 @@
 <?php
 
 /**
+ * Implements hook_install().
+ */
+function social_likes_install() {
+  variable_set('social_likes_skin', 'flat');
+  variable_set('social_likes_custom', 'sites/all/modules/social_likes/css/social-likes_example.css');
+  variable_set('social_likes_look', FALSE);
+  variable_set('social_likes_labels', FALSE);
+  variable_set('social_likes_websites', drupal_map_assoc(array('facebook', 'twitter', 'vkontakte')));
+  variable_set('social_likes_url', '[node:url]');
+  variable_set('social_likes_title', '[node:title]');
+  variable_set('social_likes_via', '');
+  variable_set('social_likes_related', '');
+  variable_set('social_likes_image_url', '');
+}
+
+/**
  * Implements hook_uninstall().
  */
 function social_likes_uninstall() {
